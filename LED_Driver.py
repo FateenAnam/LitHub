@@ -1,14 +1,15 @@
 from time import sleep
-
 import serial
 
-dev = serial.Serial("COM1", baudrate=9600)
+# Connect to Arduino
+# On MacOS, find the port by "ls /dev/*" in terminal. Then, copy in /dev/tty.usbmodem or /dev/tty.usbserial.
+dev = serial.Serial(port="/dev/tty.usbmodem143301", baudrate=9600)
 
-print('starting')
+print("Starting")
 sleep(3)
-print('ready')
-running = True
-while (running == True):
+print("Ready")
+
+while True:
     command = input('input int: ')
     dev.write(command.encode('ascii'))
-    print('running')
+    print("Running")
