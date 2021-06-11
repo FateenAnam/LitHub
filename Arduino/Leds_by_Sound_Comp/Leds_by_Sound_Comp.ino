@@ -1,9 +1,7 @@
-
-
 #include <FastLED.h>
 
 // How many leds in your strip?
-#define NUM_LEDS 223
+#define NUM_LEDS 300
 #define DATA_PIN 3
 #define CLOCK_PIN 13
 #define BRIGHTNESS          96
@@ -24,7 +22,7 @@ uint32_t timebase=0;
 uint32_t phase=49151;
  bool finished = true;
  bool running = false;
-int blueToothVal = 0;           //value sent over via bluetooth
+int inputMode = 0;           // value sent over via Bluetooth/USB
 int Mode = 2;    //stores mode
 int Col = 6;    //stores Color
 int trueCol ;
@@ -33,7 +31,7 @@ void setup() {
   Serial.begin(9600);
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);  // GRB ordering is typical
 
-  // set master brightness control
+  // Set master brightness control
   FastLED.setBrightness(BRIGHTNESS);
 
 }
@@ -41,14 +39,15 @@ void setup() {
 typedef void (*SimplePatternList[])();
 
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
-uint8_t gHue = 100; // rotating "base color" used by many of the patterns
+uint8_t gHue = 100; // Rotating "base color" used by many of the patterns
 
 void loop() {
-  
+
 //**********************************************************************
-//read value from sensor
+// Read from microphone
+//**********************************************************************
 unsigned long startMillis= millis();  // Start of sample window
-   unsigned int peakToPeak = 0;   // peak-to-peak level
+   unsigned int peakToPeak = 0;   // Peak-to-peak level
  
    unsigned int signalMax = 0;
    unsigned int signalMin = 1024;
@@ -58,7 +57,7 @@ unsigned long startMillis= millis();  // Start of sample window
    while (millis() - startMillis < sampleWindow)
    {
       sample = analogRead(5);
-      if (sample < 1024)  // toss out spurious readings
+      if (sample < 1024)  // Remove invalid results
       {
          if (sample > signalMax)
          {
@@ -72,27 +71,21 @@ unsigned long startMillis= millis();  // Start of sample window
    }
    peakToPeak = signalMax - signalMin;  // max - min = peak-peak amplitude
    double volts = (peakToPeak * 5.0) / 1024;  // convert to volts
-  
-   
+
  //**********************************************************************
- //read bluetooth value
+ // Read input mode from USB/Bluetooth
+ //**********************************************************************
  if(Serial.available()){
-    blueToothVal=Serial.read()-48; //read it
-   if (not(blueToothVal == 1)and blueToothVal <=5 ){
-    Mode = blueToothVal;
+    inputMode=Serial.read()-48; //read it
+   if (not(inputMode == 1)and inputMode <=5 ){
+    Mode = inputMode;
    }
-      if (not(blueToothVal == 1)and blueToothVal >=6 ){
-    Col = blueToothVal;
+      if (not(inputMode == 1)and inputMode >=6 ){
+    Col = inputMode;
    }
   }
 
 
-
-  //***************************************************************************
-
-
-
-   //***************************************************************************
  // number of leds on
  ledOn = ceil(volts*40); 
 //Serial.println(ledOn);
@@ -105,12 +98,12 @@ unsigned long startMillis= millis();  // Start of sample window
  // for (int i = 0; i < (ledOn + 1); i++){
    // fill_rainbow( leds, ledOn, gHue, 7);
 //  }
-if ((blueToothVal == 1) and running == false){
+if ((inputMode == 1) and running == false){
   on();
   running = true;
 }
 
-if (blueToothVal == 1 and running == true){
+if (inputMode == 1 and running == true){
   off();
   running = false;
 }
@@ -150,7 +143,7 @@ EVERY_N_MILLISECONDS( 500 ) { gHue++; }
 }
 
 FastLED.show();
-blueToothVal = 0;
+inputMode = 0;
 }
 //*****************************************************************
 
