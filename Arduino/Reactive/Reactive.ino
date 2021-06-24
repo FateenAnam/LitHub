@@ -2,7 +2,7 @@
 
 // How many leds in your strip?
 #define NUM_LEDS 300
-#define DATA_PIN 3
+#define DATA_PIN 2
 #define BRIGHTNESS          10
 #define FRAMES_PER_SECOND  120
 #define MIDDLE_LED 111

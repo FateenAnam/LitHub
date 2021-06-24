@@ -2,8 +2,8 @@
 
 // How many leds in your strip?
 #define NUM_LEDS 300
-#define DATA_PIN 3
-#define BRIGHTNESS          10
+#define DATA_PIN 2
+#define BRIGHTNESS          1
 #define FRAMES_PER_SECOND  120
 #define MIDDLE_LED 111
 const int sampleWindow = 50; // Sample window width in mS (50 mS = 20Hz)
@@ -34,7 +34,7 @@ uint8_t gHue = 100; // rotating "base color" used by many of the patterns
 
 void setup() {
   Serial.begin(9600); // open the serial port at 9600 bps:
-  FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, 300);
+  FastLED.addLeds<WS2812B, DATA_PIN>(leds, 300);
   FastLED.setBrightness(BRIGHTNESS);
 
   for (int i = 0; i < NUM_LEDS; ++i) {

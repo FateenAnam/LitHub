@@ -4,9 +4,9 @@
 #define NUM_LEDS 300
 #define DATA_PIN 3
 #define CLOCK_PIN 13
-#define BRIGHTNESS          10
+#define BRIGHTNESS          1
 #define FRAMES_PER_SECOND  120
-#define MIDDLE_LED 111
+#define MIDDLE_LED 150
 const int sampleWindow = 50; // Sample window width in mS (50 mS = 20Hz)
 unsigned int sample;
 bool beat = false;
@@ -22,7 +22,7 @@ uint32_t timebase = 0;
 uint32_t phase = 49151;
 bool finished = true;
 bool running = false;
-int inputMode = 0;           // value sent over via Bluetooth/USB
+int blueToothVal = 0;           //value sent over via bluetooth
 int Mode = 2;    //stores mode
 int Col = 6;    //stores Color
 int trueCol ;
@@ -31,136 +31,142 @@ void setup() {
   Serial.begin(9600);
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);  // GRB ordering is typical
 
-  // Set master brightness control
+  // set master brightness control
   FastLED.setBrightness(BRIGHTNESS);
+
 }
 
 typedef void (*SimplePatternList[])();
 
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
-uint8_t gHue = 100; // Rotating "base color" used by many of the patterns
+uint8_t gHue = 100; // rotating "base color" used by many of the patterns
 
 void loop() {
-  
-  leds[0].r = 255;
-  leds[0].g = 0;
-  leds[0].b = 0;
-  //
-  //  //**********************************************************************
-  //  // Read from microphone
-  //  //**********************************************************************
-  //  unsigned long startMillis = millis(); // Start of sample window
-  //  unsigned int peakToPeak = 0;   // Peak-to-peak level
-  //
-  //  unsigned int signalMax = 0;
-  //  unsigned int signalMin = 1024;
-  //
-  //
-  //  // collect data for 50 mS
-  //  while (millis() - startMillis < sampleWindow)
-  //  {
-  //    sample = analogRead(5);
-  //    if (sample < 1024)  // Remove invalid results
-  //    {
-  //      if (sample > signalMax) // Save just the max level
-  //      {
-  //        signalMax = sample;
-  //      }
-  //      else if (sample < signalMin) // Save just the max level
-  //      {
-  //        signalMin = sample;
-  //      }
-  //    }
+
+  //**********************************************************************
+  //read value from sensor
+  unsigned long startMillis = millis(); // Start of sample window
+  unsigned int peakToPeak = 0;   // peak-to-peak level
+
+  unsigned int signalMax = 0;
+  unsigned int signalMin = 1024;
+
+
+  // collect data for 50 mS
+  while (millis() - startMillis < sampleWindow)
+  {
+    sample = analogRead(5);
+    if (sample < 1024)  // toss out spurious readings
+    {
+      if (sample > signalMax)
+      {
+        signalMax = sample;  // save just the max levels
+      }
+      else if (sample < signalMin)
+      {
+        signalMin = sample;  // save just the min levels
+      }
+    }
+  }
+  peakToPeak = signalMax - signalMin;  // max - min = peak-peak amplitude
+  double volts = (peakToPeak * 5.0) / 1024;  // convert to volts
+
+
+  //**********************************************************************
+  //read bluetooth value
+  if (Serial.available()) {
+    blueToothVal = Serial.read() - 48; //read it
+    if (not(blueToothVal == 1) and blueToothVal <= 5 ) {
+      Mode = blueToothVal;
+    }
+    if (not(blueToothVal == 1) and blueToothVal >= 6 ) {
+      Col = blueToothVal;
+    }
+  }
+
+
+
+  //***************************************************************************
+
+
+
+  //***************************************************************************
+  // number of leds on
+  ledOn = ceil(volts * 40);
+  //Serial.println(ledOn);
+  //Turns all leds off
+  for (int i = 0; i < (NUM_LEDS); i++) {
+    leds[i] = CRGB::Black;
+  }
+
+  //Sets correct LEDs on
+  // for (int i = 0; i < (ledOn + 1); i++){
+  // fill_rainbow( leds, ledOn, gHue, 7);
   //  }
-  //  peakToPeak = signalMax - signalMin;  // max - min = peak-peak amplitude
-  //  double volts = (peakToPeak * 5.0) / 1024;  // convert to volts
-  //
-  //  //**********************************************************************
-  //  // Read input mode from USB/Bluetooth
-  //  //**********************************************************************
-  //  if (Serial.available()) {
-  //    inputMode = Serial.read() - 9; //read it
-  //    if (inputMode != 1 and inputMode <= 5 ) {
-  //      Mode = inputMode;
-  //    }
-  //    if (inputMode != 1 and inputMode >= 6 ) {
-  //      Col = inputMode;
-  //    }
-  //  }
-  //
-  //  Serial.println(inputMode);
-  //  // number of leds on
-  //  ledOn = ceil(volts * 40);
-  //  //Serial.println(ledOn);
-  //  //Turns all leds off
-  ////  for (int i = 0; i < (NUM_LEDS); i++) {
-  ////    leds[i] = CRGB::Black;
-  ////  }
-  //
-  //  // Sets correct LEDs on
-  //  for (int i = 0; i < (ledOn + 1); i++) {
-  //    fill_rainbow( leds, ledOn, gHue, 7);
-  //  }
-  //  if ((inputMode == 1) and running == false) {
-  //    on();
-  //    running = true;
-  //  }
-  //
-  //  if (inputMode == 1 and running == true) {
-  //    off();
-  //    running = false;
-  //  }
-  //
-  //  if (running == true) {
-  //    if (Mode == 2) {
-  //      reactive();
-  //    }
-  //    if (Mode == 3) {
-  //      //Sparkle(random(255),random(255),random(255),0);
-  //      // RunningLights(random(255),random(255),random(255),5);
-  //      for (int i = 0; i < NUM_LEDS; i++) {
-  //        leds[i] = CHSV( gHue, 255, 192);
-  //      }
-  //      FastLED.show();
-  //    }
-  //    if (Mode == 4) {
-  //      juggle();
-  //    }
-  //    if (Mode == 5) {
-  //      rainbow();
-  //    }
-  //
-  //    if (Col == 9) {
-  //      if (ledOn > 70 ) {
-  //        gHue = gHue + 51;
-  //      }
-  //      EVERY_N_MILLISECONDS( 20 ) {
-  //        gHue++;
-  //      }
-  //    }
-  //
-  //    if (Col == 6) {
-  //      EVERY_N_MILLISECONDS( 500 ) {
-  //        gHue++;
-  //      }
-  //    }
-  //    FastLED.show();
-  //  }
-  //
-  //  FastLED.show();
-  //  inputMode = 0;
-  //}
-  //
-  //void reactive() {
-  //  fill_rainbow( leds, ledOn, gHue, 3);
-  //  fill_rainbow( leds - ledOn + NUM_LEDS, ledOn, gHue, 3);
-  //
-  //
-  //  for (int i = 0; i < (29); i++) {
-  //    leds[MIDDLE_LED + i] = CHSV( gHue, 255, 192) ;
-  //    leds[MIDDLE_LED - i] = CHSV( gHue, 255, 192) ;
-  //  }
-  //  FastLED.show();
+  if ((blueToothVal == 1) and running == false) {
+    on();
+    running = true;
+  }
+
+  if (blueToothVal == 2 and running == true) {
+    off();
+    running = false;
+  }
+
+
+  if (running == true) {
+//    if (Mode == 2) {
+//      //  reactive();
+//    }
+    if (Mode == 3) {
+      //Sparkle(random(255),random(255),random(255),0);
+      // RunningLights(random(255),random(255),random(255),5);
+      for (int i = 0; i < NUM_LEDS; i++) {
+        leds[i] = CHSV( gHue, 255, 192);
+      }
+      FastLED.show();
+    }
+    if (Mode == 4) {
+      juggle();
+    }
+    if (Mode == 5) {
+      rainbow();
+    }
+
+    if (Col == 9) {
+      if (ledOn > 70 ) {
+        gHue = gHue + 51;
+
+      }
+      EVERY_N_MILLISECONDS( 20 ) {
+        gHue++;
+      }
+    }
+
+    if (Col == 6) {
+      EVERY_N_MILLISECONDS( 500 ) {
+        gHue++;
+      }
+    }
+    FastLED.show();
+  }
+
+  FastLED.show();
+  blueToothVal = 0;
+}
+//*****************************************************************
+
+
+void reactive() {
+  fill_rainbow( leds, ledOn, gHue, 3);
+  fill_rainbow( leds - ledOn + NUM_LEDS, ledOn, gHue, 3);
+
+
+  for (int i = 0; i < (29); i++) {
+    leds[MIDDLE_LED + i] = CHSV( gHue, 255, 192) ;
+    leds[MIDDLE_LED - i] = CHSV( gHue, 255, 192) ;
+  }
+  FastLED.show();
 }
 
 void sinelonL() {
