@@ -1,41 +1,34 @@
 #include <FastLED.h>
 
 // How many leds in your strip?
-#define NUM_LEDS 300
-#define DATA_PIN 2
-#define BRIGHTNESS          10
-#define FRAMES_PER_SECOND  120
-#define MIDDLE_LED 111
+#define NUM_LEDS_1 600
+#define NUM_LEDS_2 600
+#define NUM_LEDS_3 600
+#define DATA_PIN_1 2
+#define DATA_PIN_2 6
+#define DATA_PIN_3 7
+#define BRIGHTNESS 100
+CRGB leds_1[NUM_LEDS_1];
+CRGB leds_2[NUM_LEDS_2];
+CRGB leds_3[NUM_LEDS_3];
+int ledNewOn = NUM_LEDS_1;
+int ledOldOn = 0;
 const int sampleWindow = 50; // Sample window width in mS (50 mS = 20Hz)
+int microphonePin = A9;    // select the input pin for the potentiometer
 unsigned int sample;
-bool beat = false;
-CRGB leds[NUM_LEDS];
-int sensorPin = A5;    // select the input pin for the potentiometer
-int ledPin = 13;      // select the pin for the LED
-int sensorValue = 0;  // variable to store the value coming from the sensor
-int ledOn = 0 ;
-unsigned int globL = 0;
-unsigned int globR = 0;
-int ti = 0;
-uint32_t timebase = 0;
-uint32_t phase = 49151;
-bool finished = true;
-bool running = false;
-int blueToothVal = 0;           //value sent over via bluetooth
-int Mode = 2;    //stores mode
-int Col = 6;    //stores Color
-int trueCol;
 
 typedef void (*SimplePatternList[])();
 
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
 uint8_t gHue = 100; // rotating "base color" used by many of the patterns
 
-
 void setup() {
-  Serial.begin(9600); // open the serial port at 9600 bps:
-  FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, 300);
+    Serial.begin(9600); // open the serial port at 9600 bps:
+  FastLED.addLeds<NEOPIXEL, DATA_PIN_1>(leds_1, NUM_LEDS_1);
+  //  FastLED.addLeds<NEOPIXEL, DATA_PIN_2>(leds_2, NUM_LEDS_2);
+  //  FastLED.addLeds<NEOPIXEL, DATA_PIN_3>(leds_3, NUM_LEDS_3);
   FastLED.setBrightness(BRIGHTNESS);
+  pinMode(microphonePin, INPUT);
 }
 
 void loop() {
@@ -51,7 +44,7 @@ void loop() {
   // collect data for 50 mS
   while (millis() - startMillis < sampleWindow)
   {
-    sample = analogRead(5);
+    sample = analogRead(microphonePin);
     if (sample < 1024)  // Sanitize input
     {
       if (sample > signalMax) // Save just the max levels
@@ -69,14 +62,27 @@ void loop() {
 
   double volts = (peakToPeak * 5.0) / 1024;  // convert to volts
 
-  // number of leds on
-  ledOn = ceil(volts * 200);
+  ledNewOn = ceil(volts * 50);
 
-  Serial.print(ledOn);
-  Serial.println();
+
+
+  //  Serial.println(peakToPeak);
+
+  // Cut-off at NUM_LEDS
+  if (ledNewOn > NUM_LEDS_1) {
+    ledNewOn = NUM_LEDS_1;
+  }
 
   // Call the reactive to sounds function
   reactive();
+
+//  Serial.println(millis() - startMillis - sampleWindow);
+  Serial.println(ledNewOn);
+
+  //  for (int i = 0; i < NUM_LEDS_1; ++i) {
+  //    leds_1[i] = CRGB::White;
+  //  }
+  //  digitalWrite(0, HIGH);
 }
 
 //**********************************************************************
@@ -84,18 +90,29 @@ void loop() {
 // Reacts to sounds
 //**********************************************************************
 void reactive() {
-  for (int i = 0; i < NUM_LEDS; ++i) {
-    leds[i] = CRGB::Black;
+
+  //  int ledsToTurnOff = ledOldOn - ledNewOn;
+  //  if (ledsToTurnOff > 0) { // If we need to turn off LEDs
+  //    // Only turn off what we need to
+  //    for (int i = ledOldOn; i > ledNewOn; --i) {
+  //      leds_1[i] = CRGB::Black;
+  //      //      leds_2[i] = CRGB::Black;
+  //      //      leds_3[i] = CRGB::Black;
+  //    }
+  //  }
+
+  for (int i = 0; i < NUM_LEDS_1; ++i) {
+    leds_1[i] = CRGB::Black;
   }
 
-  // Cut-off at NUM_LEDS
-  if (ledOn > NUM_LEDS) {
-    ledOn = NUM_LEDS;
+  for (int i = 0; i < ledNewOn; ++i) {
+    leds_1[i] = CHSV(i + gHue, 255, 192);
+    //    leds_2[i] = CHSV(newVal, 255, 192);
+    //    leds_3[i] = CHSV(newVal, 255, 192);
+    //    leds[i] = CRGB::White; // set to full white!
   }
 
-  for (int i = 0; i < ledOn; ++i) {
-    leds[i] = CHSV(i + gHue, 255, 192);
-  }
-  ++gHue;
+  ledOldOn = ledNewOn;
+  gHue = gHue + 5;
   FastLED.show();
 }
