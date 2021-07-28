@@ -5,9 +5,9 @@
 #include <FastLED.h>
 
 // How many leds in your strip?
-#define NUM_LEDS_1 600
-#define NUM_LEDS_2 600
-#define NUM_LEDS_3 600
+#define NUM_LEDS_1 800
+#define NUM_LEDS_2 800
+#define NUM_LEDS_3 800
 
 // Usable pins:
 //   Teensy LC:   1, 4, 5, 24
@@ -22,9 +22,20 @@
 #define DATA_PIN_3 14
 
 #define BRIGHTNESS 100
-CRGB leds_1[NUM_LEDS_1];
-CRGB leds_2[NUM_LEDS_2];
-CRGB leds_3[NUM_LEDS_3];
+
+int Front_Left_Bottom = 0;
+int Front_Left_Top = 163;
+int Rear_Left_Bottom = 600;
+int Rear_Left_Top = Rear_Left_Bottom - 163 + 67;
+CRGB leds_1[NUM_LEDS_1]; // Left wall
+
+int Front_Right_Bottom = 340;
+int Front_Right_Top = 340 - 163;
+CRGB leds_2[NUM_LEDS_2]; // Center wall
+
+int Rear_Right_Bottom = 506;
+CRGB leds_3[NUM_LEDS_3]; // Right / Back wall
+
 int ledNewOn = NUM_LEDS_1;
 int ledOldOn = 0;
 const int sampleWindow = 50; // Sample window width in mS (50 mS = 20Hz)
@@ -38,9 +49,9 @@ uint8_t gHue = 100; // rotating "base color" used by many of the patterns
 
 void setup() {
   Serial.begin(9600); // open the serial port at 9600 bps:
-  LEDS.addLeds<WS2812SERIAL, DATA_PIN_1, RGB>(leds_1, NUM_LEDS_1);
-  LEDS.addLeds<WS2812SERIAL, DATA_PIN_2, RGB>(leds_2, NUM_LEDS_2);
-  LEDS.addLeds<WS2812SERIAL, DATA_PIN_3, RGB>(leds_3, NUM_LEDS_3);
+  LEDS.addLeds<WS2812SERIAL, DATA_PIN_1, BGR>(leds_1, NUM_LEDS_1);
+  LEDS.addLeds<WS2812SERIAL, DATA_PIN_2, BGR>(leds_2, NUM_LEDS_2);
+  LEDS.addLeds<WS2812SERIAL, DATA_PIN_3, BGR>(leds_3, NUM_LEDS_3);
   LEDS.setBrightness(BRIGHTNESS);
 }
 
@@ -76,26 +87,24 @@ void loop() {
 
   double volts = (peakToPeak * 5.0) / 1024;  // convert to volts
 
-  ledNewOn = ceil(volts * 50);
-
-
-
-  //  Serial.println(peakToPeak);
+  ledNewOn = ceil(volts * 37.5) + 50;
 
   // Cut-off at NUM_LEDS
   if (ledNewOn > NUM_LEDS_1) {
     ledNewOn = NUM_LEDS_1;
   }
+  //  int start = 163;
+  //  for (int i = start; i < start + 20; ++i) {
+  //    leds_1[Front_Left_Bottom + i] = CRGB::Blue;
+  //    leds_2[Front_Right_Bottom - i] = CRGB::Blue;
+  //    leds_3[Rear_Right_Bottom - i + 14] = CRGB::Blue;
+  //    leds_1[Rear_Left_Bottom - i + 55 + 14] = CRGB::Blue;
+  //  }
+  //  FastLED.show();
 
   // Call the reactive to sounds function
   reactive();
 
-  Serial.println(millis() - startMillis);
-  //  Serial.println(ledNewOn);
-  //  for (int i = 0; i < NUM_LEDS_1; ++i) {
-  //    leds_1[i] = CRGB::Red;
-  //  }
-  //  FastLED.show();
 }
 
 //**********************************************************************
@@ -109,11 +118,30 @@ void reactive() {
     leds_3[i] = CRGB::Black;
   }
 
-  for (int i = 0; i < ledNewOn; ++i) {
-    leds_1[i] = CHSV(i + gHue, 255, 192);
-    leds_2[i] = CHSV(i + gHue, 255, 192);
-    leds_3[i] = CHSV(i + gHue, 255, 192);
-    //    leds_1[i] = CRGB::White; // set to full white!
+  if (ledNewOn > 163) {
+    ledNewOn = 163;
+  }
+
+  //  for (int i = 0; i < ledNewOn; ++i) {
+  //    leds_1[Front_Left_Bottom + i] = CHSV(i + gHue, 255, 192);
+  //    leds_2[Front_Right_Bottom - i] = CHSV(i + gHue, 255, 192);
+  //    leds_3[min(Rear_Right_Bottom, Rear_Right_Bottom - i + 14)] = CHSV(i + gHue, 255, 192);
+  //    leds_1[Rear_Left_Bottom - i + 67] = CHSV(i + gHue, 255, 192);
+  //  }
+
+  // Front-Top Rainbow Bar
+  for (int i = 0; i < (Front_Right_Bottom - 163); ++i) {
+    leds_2[i] = CHSV(gHue, 255, 192);
+  }
+
+  // Top-Left Rainbow Bar
+  for (int i = Front_Left_Top; i < Rear_Left_Top; ++i) {
+    leds_1[i] = CHSV(gHue, 255, 192);
+  }
+
+  // Top-Left Rainbow Bar
+  for (int i = Front_Left_Top; i < Rear_Left_Top; ++i) {
+    leds_1[i] = CHSV(gHue, 255, 192);
   }
 
   ledOldOn = ledNewOn;
