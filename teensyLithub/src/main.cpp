@@ -82,12 +82,28 @@ class VirtualStrip {
         }
   }
 
-  void appendStrip(VirtualStrip& newStrip) {
-    CRGB** newStrip = new CRGB*[numLeds + newStrip.getLength()];
+  ~VirtualStrip() {
+    delete stripPtr;
+  }
 
+  void appendStrip(VirtualStrip& newStrip) {
+    uint16_t newLength = numLeds + newStrip.getLength();
+    CRGB** newStripPtr = new CRGB*[newLength];
+
+    // Transfer original array
     for (int i = 0; i < numLeds; ++i) {
-      newStrip = (stripPtr[i]);
+      newStripPtr[i] = stripPtr[i];
     }
+    // Add new strip
+    for (int i = numLeds; i < newLength; ++i) {
+      newStripPtr[i] = &(newStrip[i - numLeds]);
+    }
+
+    numLeds = newLength;
+
+    CRGB** tmp = stripPtr;
+    stripPtr = newStripPtr;
+    delete tmp;
   }
 
   CRGB& operator[](int index) {
@@ -109,6 +125,9 @@ class VirtualStrip {
     bool reversed;
 };
 
+VirtualStrip rearRightStrip(leds_3, Rear_Right_Bottom, Rear_Right_Num, true);
+VirtualStrip rightCeiling(leds_3, Front_Right_TopR, Rear_Right_TopR);
+
 void setup() {
   Serial.begin(9600); // open the serial port at 9600 bps:
   // Native strips
@@ -118,11 +137,13 @@ void setup() {
 
   // LEDS.addLeds<WS2812SERIAL, DATA_PIN_3, BGR>(rearRightStrip, 149);
   LEDS.setBrightness(BRIGHTNESS);
+
+  Serial.println(rearRightStrip.getLength());
+  rightCeiling.appendStrip(rearRightStrip);
+  Serial.println(rearRightStrip.getLength());
 }
 
-VirtualStrip rearRightStrip(leds_3, Rear_Right_Bottom, Rear_Right_Num, true);
-VirtualStrip rightCeiling(leds_3, Front_Right_TopR, Rear_Right_TopR);
-// VirtualStrip testStrip(leds_1, 0, 800);
+
 
 CRGB* test[800];
 
