@@ -32,9 +32,10 @@ CRGB leds_1[NUM_LEDS_1]; // Left wall
 
 int Front_Left_TopL = 0;
 int Front_Right_Bottom = 340;
-int Front_Right_Top = 340 - 163;
+int Front_Right_TopL = 340 - 163;
 CRGB leds_2[NUM_LEDS_2]; // Center wall
 
+int Front_Right_TopR = 0;
 int Rear_Right_Bottom = 506;
 int Rear_Right_Num = 149;
 int Rear_Right_TopR = 506 - Rear_Right_Num; // 357
@@ -55,6 +56,7 @@ uint8_t gHue = 100; // rotating "base color" used by many of the patterns
 
 void reactive();
 void movingRainbow();
+void calibrateStripPosition(CRGB* start);
 
 /**
  * @class VirtualStrip
@@ -63,40 +65,46 @@ void movingRainbow();
  */
 class VirtualStrip {
   public:
-  VirtualStrip(CRGB* strip, uint16_t begin, uint16_t numLedsParam, bool reverseParam = false) 
-      : stripPtr(strip + begin),
-        numLeds(numLedsParam),
-        reversed(reverseParam)
+  VirtualStrip(CRGB* strip, uint16_t begin, uint16_t numLeds, bool reversed = false) 
+      : stripPtr(new CRGB*[numLeds]), // Dynamically allocate array
+        numLeds(numLeds),
+        reversed(reversed)
       {
-        if (reversed) {
-
+        if (!reversed) {
+          for (int i = 0; i < numLeds; ++i) {
+            stripPtr[i] = &(strip[begin + i]);
+          }
+        }
+        else {
+          for (int i = 0; i < numLeds; ++i) {
+            stripPtr[i] = &(strip[begin - i]);
+          }
         }
   }
 
-  CRGB& operator[](int index) {
-    if (index >= numLeds) {
-      return stripPtr[numLeds];
+  void appendStrip(VirtualStrip& newStrip) {
+    CRGB** newStrip = new CRGB*[numLeds + newStrip.getLength()];
+
+    for (int i = 0; i < numLeds; ++i) {
+      newStrip = (stripPtr[i]);
     }
+  }
+
+  CRGB& operator[](int index) {
+    // if (index >= numLeds) {
+    //   return *(stripPtr[numLeds]);
+    // }
 
     // Index into array based on if it is reversed or not
-    if (!reversed) {
-      return stripPtr[index];
-    }
-    else {
-      return *(stripPtr - index);
-    }
+    return *(stripPtr[index]);
   }
 
   uint16_t getLength() {
     return numLeds;
   }
 
-  // CRGB* operator*() {
-  //   return stripPtr;
-  // }
-
   private:
-    CRGB* stripPtr;
+    CRGB** stripPtr;
     uint16_t numLeds;
     bool reversed;
 };
@@ -113,17 +121,33 @@ void setup() {
 }
 
 VirtualStrip rearRightStrip(leds_3, Rear_Right_Bottom, Rear_Right_Num, true);
-VirtualStrip testStrip(leds_1, 0, 800);
+VirtualStrip rightCeiling(leds_3, Front_Right_TopR, Rear_Right_TopR);
+// VirtualStrip testStrip(leds_1, 0, 800);
+
+CRGB* test[800];
 
 void loop() {
+  // for (int i = 0; i < 600; ++i) {
+  //   test[i] = &(leds_1[i]);
+  // }
+  // for (int i = 0; i < rearRightStrip.getLength(); ++i) {
+  //   *(test[i]) = CRGB::White;
+  // }
   // reactive();
   // movingRainbow();  
 
   // fill_rainbow(leds_1, 600, 100);
-  for (int i = 0; i < rearRightStrip.getLength(); ++i) {
-    rearRightStrip[i] = CHSV(i + 5*gHue, 255, 192);
+  // for (int i = 0; i < NUM_LEDS_1; ++i) {
+  //   leds_1[i] = CRGB::Black;
+  //   leds_2[i] = CRGB::Black;
+  //   leds_3[i] = CRGB::Black;
+  // }
+
+  for (int i = 0; i < rightCeiling.getLength(); ++i) {
+    rightCeiling[i] = CRGB::White;
   }
   FastLED.show();
+  // calibrateStripPosition(leds_3 + Front_Right_TopL);
 }
 
 //**********************************************************************
