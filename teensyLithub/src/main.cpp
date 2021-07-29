@@ -41,8 +41,7 @@ int Rear_Right_TopR = 506 - Rear_Right_Num; // 357
 int Rear_Right_TopL = 507;
 CRGB leds_3[NUM_LEDS_3]; // Right / Back wall
 
-int ledNewOn = NUM_LEDS_1;
-int ledOldOn = 0;
+int ledNewOn = NUM_LEDS_1; // How many LEDS to turn on
 const int sampleWindow = 50; // Sample window width in mS (50 mS = 20Hz)
 int microphonePin = A8;    // select the input pin for the potentiometer
 unsigned int sample;
@@ -57,21 +56,39 @@ uint8_t gHue = 100; // rotating "base color" used by many of the patterns
 void reactive();
 void movingRainbow();
 
-struct VirtualStrip {
+/**
+ * @class VirtualStrip
+ * @brief Allows the user to group the strips into their logical locations. For example,
+ * the front-left bar can have its own strip
+ */
+class VirtualStrip {
+  public:
   VirtualStrip(CRGB* strip, uint16_t begin, uint16_t numLedsParam, bool reverseParam = false) 
       : stripPtr(strip + begin),
         numLeds(numLedsParam),
         reversed(reverseParam)
-      { 
+      {
+        if (reversed) {
+
+        }
   }
 
   CRGB& operator[](int index) {
+    if (index >= numLeds) {
+      return stripPtr[numLeds];
+    }
+
+    // Index into array based on if it is reversed or not
     if (!reversed) {
       return stripPtr[index];
     }
     else {
       return *(stripPtr - index);
     }
+  }
+
+  uint16_t getLength() {
+    return numLeds;
   }
 
   // CRGB* operator*() {
@@ -100,13 +117,13 @@ VirtualStrip testStrip(leds_1, 0, 800);
 
 void loop() {
   // reactive();
-  movingRainbow();  
+  // movingRainbow();  
 
-  // // fill_rainbow(leds_1, 600, 100);
-  // for (int i = 0; i < 100; ++i) {
-  //   rearRightStrip[i] = CHSV(i + 5*gHue, 255, 192);
-  // }
-  // FastLED.show();
+  // fill_rainbow(leds_1, 600, 100);
+  for (int i = 0; i < rearRightStrip.getLength(); ++i) {
+    rearRightStrip[i] = CHSV(i + 5*gHue, 255, 192);
+  }
+  FastLED.show();
 }
 
 //**********************************************************************
@@ -215,7 +232,7 @@ void reactive() {
     leds_3[i] = CHSV(gHue, 255, 192);
   }
 
-  ledOldOn = ledNewOn;
+  // ledOldOn = ledNewOn;
   gHue = gHue + 1;
 
   Serial.println(millis() - lastColorChange);
