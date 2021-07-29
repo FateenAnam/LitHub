@@ -24,13 +24,13 @@
 #define BRIGHTNESS 100
 
 int Front_Left_Bottom = 0;
-int Front_Left_TopR = 163;
+int Front_Left_TopL = 163;
 int Rear_Left_Bottom = 600;
 int Rear_Left_TopL = Rear_Left_Bottom - 163 + 67; // 504
 int Rear_Left_TopR = 668;
 CRGB leds_1[NUM_LEDS_1]; // Left wall
 
-int Front_Left_TopL = 0;
+int Front_Left_TopR = 0;
 int Front_Right_Bottom = 340;
 int Front_Right_TopL = 340 - 163;
 CRGB leds_2[NUM_LEDS_2]; // Center wall
@@ -77,7 +77,7 @@ class VirtualStrip {
         }
         else {
           for (int i = 0; i < numLeds; ++i) {
-            stripPtr[i] = &(strip[begin - i]);
+            stripPtr[i] = &(strip[begin + numLeds - i]);
           }
         }
   }
@@ -125,8 +125,21 @@ class VirtualStrip {
     bool reversed;
 };
 
-VirtualStrip rearRightStrip(leds_3, Rear_Right_Bottom, Rear_Right_Num, true);
-VirtualStrip rightCeiling(leds_3, Front_Right_TopR, Rear_Right_TopR);
+// Define volume bars
+VirtualStrip frontLeftStrip(leds_1, Front_Left_Bottom, Front_Left_TopL - Front_Left_Bottom);
+VirtualStrip frontRightStrip(leds_2, Front_Right_TopL, Front_Right_Bottom - Front_Right_TopL, true);
+VirtualStrip rearLeftStrip(leds_1, Rear_Left_TopL, Rear_Left_Bottom - Rear_Left_TopL, true);
+VirtualStrip rearRightStrip(leds_3, Rear_Right_Bottom, Rear_Right_Num - Rear_Right_Bottom, true);
+
+// Define ceiling bars
+VirtualStrip rightCeilingStrip(leds_3, Front_Right_TopR, Rear_Right_TopR - Front_Right_TopR);
+VirtualStrip rearCeilingStrip(leds_3, Rear_Right_TopL, Rear_Left_TopR - Rear_Right_TopL);
+VirtualStrip leftCeilingStrip(leds_1, Front_Left_TopL, Rear_Left_TopL - Front_Left_TopL, true);
+// VirtualStrip leftCeilingStrip(leds_1, 163, 300, false);
+VirtualStrip frontCeilingStrip(leds_2, Front_Left_TopR, Front_Right_TopL - Front_Left_TopR);
+
+// Master ceiling
+VirtualStrip ceilingStrip(leds_2, Front_Left_TopR, Front_Right_TopL - Front_Left_TopR);
 
 void setup() {
   Serial.begin(9600); // open the serial port at 9600 bps:
@@ -138,9 +151,9 @@ void setup() {
   // LEDS.addLeds<WS2812SERIAL, DATA_PIN_3, BGR>(rearRightStrip, 149);
   LEDS.setBrightness(BRIGHTNESS);
 
-  Serial.println(rearRightStrip.getLength());
-  rightCeiling.appendStrip(rearRightStrip);
-  Serial.println(rearRightStrip.getLength());
+  ceilingStrip.appendStrip(rightCeilingStrip);
+  ceilingStrip.appendStrip(rearCeilingStrip);
+  ceilingStrip.appendStrip(leftCeilingStrip);
 }
 
 
@@ -164,10 +177,31 @@ void loop() {
   //   leds_3[i] = CRGB::Black;
   // }
 
-  for (int i = 0; i < rightCeiling.getLength(); ++i) {
-    rightCeiling[i] = CRGB::White;
+  for (int i = 0; i < ceilingStrip.getLength(); ++i) {
+    ceilingStrip[i] = CRGB::White;
+    FastLED.show();
+    delay(1);
   }
-  FastLED.show();
+
+  // for (int i = 0; i < rightCeilingStrip.getLength(); ++i) {
+  //   rightCeilingStrip[i] = CRGB::White;
+  //   FastLED.show();
+  //   delay(1);
+  // }
+
+  // for (int i = 0; i < rearCeilingStrip.getLength(); ++i) {
+  //   rearCeilingStrip[i] = CRGB::White;
+  //   FastLED.show();
+  //   delay(1);
+  // }
+
+  // for (int i = 0; i < leftCeilingStrip.getLength(); ++i) {
+  //   leftCeilingStrip[i] = CRGB::White;
+  //   FastLED.show();
+  //   delay(1);
+  // }
+  
+  
   // calibrateStripPosition(leds_3 + Front_Right_TopL);
 }
 
