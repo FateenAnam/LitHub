@@ -126,12 +126,12 @@ void reactive() {
     ledNewOn = 163;
   }
 
-  for (int i = 0; i < ledNewOn; ++i) {
-    leds_1[Front_Left_Bottom + i] = CHSV(i + gHue, 255, 192);
-    leds_2[Front_Right_Bottom - i] = CHSV(i + gHue, 255, 192);
-    leds_3[min(Rear_Right_Bottom, Rear_Right_Bottom - i + 14)] = CHSV(i + gHue, 255, 192);
-    leds_1[Rear_Left_Bottom - i + 67] = CHSV(i + gHue, 255, 192);
-  }
+   for (int i = 0; i < ledNewOn; ++i) {
+     leds_1[Front_Left_Bottom + i] = CHSV(i + gHue, 255, 192);
+     leds_2[Front_Right_Bottom - i] = CHSV(i + gHue, 255, 192);
+     leds_3[min(Rear_Right_Bottom, Rear_Right_Bottom - i + 14)] = CHSV(i + gHue, 255, 192);
+     leds_1[Rear_Left_Bottom - i + 67] = CHSV(i + gHue, 255, 192);
+   }
 
   // Front Rainbow Bar
   for (int i = 0; i < (Front_Right_Bottom - 163); ++i) {
@@ -148,7 +148,7 @@ void reactive() {
     leds_3[i] = CHSV(gHue, 255, 192);
   }
 
-  // Back Rainbow Bar
+    // Back Rainbow Bar
   for (int i = Rear_Right_TopL; i < 750; ++i) {
     leds_3[i] = CHSV(gHue, 255, 192);
   }
