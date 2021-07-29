@@ -24,17 +24,20 @@
 #define BRIGHTNESS 100
 
 int Front_Left_Bottom = 0;
-int Front_Left_Top = 163;
+int Front_Left_TopR = 163;
 int Rear_Left_Bottom = 600;
-int Rear_Left_TopL = Rear_Left_Bottom - 163 + 67;
+int Rear_Left_TopL = Rear_Left_Bottom - 163 + 67; // 504
+int Rear_Left_TopR = 668;
 CRGB leds_1[NUM_LEDS_1]; // Left wall
 
+int Front_Left_TopL = 0;
 int Front_Right_Bottom = 340;
 int Front_Right_Top = 340 - 163;
 CRGB leds_2[NUM_LEDS_2]; // Center wall
 
 int Rear_Right_Bottom = 506;
-int Rear_Right_TopR = 506 - 149; // 357
+int Rear_Right_Num = 149;
+int Rear_Right_TopR = 506 - Rear_Right_Num; // 357
 int Rear_Right_TopL = 507;
 CRGB leds_3[NUM_LEDS_3]; // Right / Back wall
 
@@ -54,21 +57,67 @@ uint8_t gHue = 100; // rotating "base color" used by many of the patterns
 void reactive();
 void movingRainbow();
 
+struct VirtualStrip {
+  VirtualStrip(CRGB* strip, uint16_t begin, uint16_t numLedsParam, bool reverseParam = false) 
+      : stripPtr(strip + begin),
+        numLeds(numLedsParam),
+        reversed(reverseParam)
+      { 
+  }
+
+  CRGB& operator[](int index) {
+    if (!reversed) {
+      return stripPtr[index];
+    }
+    else {
+      return *(stripPtr - index);
+    }
+  }
+
+  // CRGB* operator*() {
+  //   return stripPtr;
+  // }
+
+  private:
+    CRGB* stripPtr;
+    uint16_t numLeds;
+    bool reversed;
+};
+
 void setup() {
   Serial.begin(9600); // open the serial port at 9600 bps:
+  // Native strips
   LEDS.addLeds<WS2812SERIAL, DATA_PIN_1, BGR>(leds_1, NUM_LEDS_1);
   LEDS.addLeds<WS2812SERIAL, DATA_PIN_2, BGR>(leds_2, NUM_LEDS_2);
   LEDS.addLeds<WS2812SERIAL, DATA_PIN_3, BGR>(leds_3, NUM_LEDS_3);
+
+  // LEDS.addLeds<WS2812SERIAL, DATA_PIN_3, BGR>(rearRightStrip, 149);
   LEDS.setBrightness(BRIGHTNESS);
 }
 
+VirtualStrip rearRightStrip(leds_3, Rear_Right_Bottom, Rear_Right_Num, true);
+VirtualStrip testStrip(leds_1, 0, 800);
+
 void loop() {
   // reactive();
-  // movingRainbow();
+  movingRainbow();  
 
-  fill_rainbow(leds_3 + 640, 20, 100, 50);
+  // // fill_rainbow(leds_1, 600, 100);
+  // for (int i = 0; i < 100; ++i) {
+  //   rearRightStrip[i] = CHSV(i + 5*gHue, 255, 192);
+  // }
+  // FastLED.show();
+}
+
+//**********************************************************************
+// Helper method - calibrateStripPosition()
+// Finds the position of a strip
+//**********************************************************************
+void calibrateStripPosition(CRGB* start) {
+  fill_rainbow(leds_3 + 660, 20, 100, 50);
   FastLED.show();
 }
+
 //**********************************************************************
 // Helper method - movingRainbow()
 // Reacts to sounds
@@ -152,7 +201,7 @@ void reactive() {
   }
 
   // Left Rainbow Bar
-  for (int i = Front_Left_Top; i < Rear_Left_TopL; ++i) {
+  for (int i = Front_Left_TopR; i < Rear_Left_TopL; ++i) {
     leds_1[i] = CHSV(gHue, 255, 192);
   }
 
@@ -171,11 +220,11 @@ void reactive() {
 
   Serial.println(millis() - lastColorChange);
 
-  // // Color shift on bass drop
-  // if (millis() - lastColorChange > 100 && ledNewOn > 120) {
-  //   lastColorChange = millis();
-  //   gHue += 100;
-  // }
+  // Color shift on bass drop
+  if (millis() - lastColorChange > 100 && ledNewOn > 120) {
+    lastColorChange = millis();
+    gHue += 100;
+  }
 
   FastLED.show();
 }
