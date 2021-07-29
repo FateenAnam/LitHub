@@ -26,7 +26,7 @@
 int Front_Left_Bottom = 0;
 int Front_Left_Top = 163;
 int Rear_Left_Bottom = 600;
-int Rear_Left_Top = Rear_Left_Bottom - 163 + 67;
+int Rear_Left_TopL = Rear_Left_Bottom - 163 + 67;
 CRGB leds_1[NUM_LEDS_1]; // Left wall
 
 int Front_Right_Bottom = 340;
@@ -34,7 +34,7 @@ int Front_Right_Top = 340 - 163;
 CRGB leds_2[NUM_LEDS_2]; // Center wall
 
 int Rear_Right_Bottom = 506;
-int Rear_Right_TopR = 506 - 149;
+int Rear_Right_TopR = 506 - 149; // 357
 int Rear_Right_TopL = 507;
 CRGB leds_3[NUM_LEDS_3]; // Right / Back wall
 
@@ -44,12 +44,15 @@ const int sampleWindow = 50; // Sample window width in mS (50 mS = 20Hz)
 int microphonePin = A8;    // select the input pin for the potentiometer
 unsigned int sample;
 
+uint32_t lastColorChange;
+
 typedef void (*SimplePatternList[])();
 
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
 uint8_t gHue = 100; // rotating "base color" used by many of the patterns
 
 void reactive();
+void movingRainbow();
 
 void setup() {
   Serial.begin(9600); // open the serial port at 9600 bps:
@@ -60,7 +63,35 @@ void setup() {
 }
 
 void loop() {
-  //  **********************************************************************
+  // reactive();
+  // movingRainbow();
+
+  fill_rainbow(leds_3 + 640, 20, 100, 50);
+  FastLED.show();
+}
+//**********************************************************************
+// Helper method - movingRainbow()
+// Reacts to sounds
+//**********************************************************************
+void movingRainbow() {
+  // for (int i = 0; i < 800; ++i) {
+  //   leds_1[i] = CHSV(gHue + i*5, 255, 192);
+  //   leds_2[i] = CHSV(gHue + i*5, 255, 192);
+  //   leds_3[i] = CHSV(gHue + i*5, 255, 192);
+  // }
+  fill_rainbow(leds_1, NUM_LEDS_1, gHue, 1);
+  fill_rainbow(leds_2, NUM_LEDS_2, gHue, 1);
+  fill_rainbow(leds_3, NUM_LEDS_3, gHue, 1);
+  gHue += 1;
+  FastLED.show();
+}
+
+//**********************************************************************
+// Helper method - reactive()
+// Reacts to sounds
+//**********************************************************************
+void reactive() {
+    //  **********************************************************************
   //   Read from microphone
   //  **********************************************************************
   unsigned long startMillis = millis(); // Start of sample window
@@ -69,7 +100,7 @@ void loop() {
   unsigned int signalMax = 0;
   unsigned int signalMin = 1024;
 
-  // collect data for 50 mS
+  // collect data for sampleWindow mS
   while (millis() - startMillis < sampleWindow)
   {
     sample = analogRead(microphonePin);
@@ -97,25 +128,7 @@ void loop() {
   if (ledNewOn > NUM_LEDS_1) {
     ledNewOn = NUM_LEDS_1;
   }
-  //  int start = 163;
-  //  for (int i = start; i < start + 20; ++i) {
-  //    leds_1[Front_Left_Bottom + i] = CRGB::Blue;
-  //    leds_2[Front_Right_Bottom - i] = CRGB::Blue;
-  //    leds_3[Rear_Right_Bottom - i + 14] = CRGB::Blue;
-  //    leds_1[Rear_Left_Bottom - i + 55 + 14] = CRGB::Blue;
-  //  }
-  //  FastLED.show();
 
-  // Call the reactive to sounds function
-  reactive();
-
-}
-
-//**********************************************************************
-// Helper method - reactive()
-// Reacts to sounds
-//**********************************************************************
-void reactive() {
   for (int i = 0; i < NUM_LEDS_1; ++i) {
     leds_1[i] = CRGB::Black;
     leds_2[i] = CRGB::Black;
@@ -139,7 +152,7 @@ void reactive() {
   }
 
   // Left Rainbow Bar
-  for (int i = Front_Left_Top; i < Rear_Left_Top; ++i) {
+  for (int i = Front_Left_Top; i < Rear_Left_TopL; ++i) {
     leds_1[i] = CHSV(gHue, 255, 192);
   }
 
@@ -155,5 +168,14 @@ void reactive() {
 
   ledOldOn = ledNewOn;
   gHue = gHue + 1;
+
+  Serial.println(millis() - lastColorChange);
+
+  // // Color shift on bass drop
+  // if (millis() - lastColorChange > 100 && ledNewOn > 120) {
+  //   lastColorChange = millis();
+  //   gHue += 100;
+  // }
+
   FastLED.show();
 }

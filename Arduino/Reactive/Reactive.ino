@@ -44,6 +44,8 @@ const int sampleWindow = 50; // Sample window width in mS (50 mS = 20Hz)
 int microphonePin = A8;    // select the input pin for the potentiometer
 unsigned int sample;
 
+uint32_t lastColorChange;
+
 typedef void (*SimplePatternList[])();
 
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
@@ -57,6 +59,9 @@ void setup() {
   LEDS.addLeds<WS2812SERIAL, DATA_PIN_2, BGR>(leds_2, NUM_LEDS_2);
   LEDS.addLeds<WS2812SERIAL, DATA_PIN_3, BGR>(leds_3, NUM_LEDS_3);
   LEDS.setBrightness(BRIGHTNESS);
+
+  // Update millis 
+  lastColorChange = millis();
 }
 
 void loop() {
@@ -69,7 +74,7 @@ void loop() {
   unsigned int signalMax = 0;
   unsigned int signalMin = 1024;
 
-  // collect data for 50 mS
+  // collect data for sampleWindow mS
   while (millis() - startMillis < sampleWindow)
   {
     sample = analogRead(microphonePin);
@@ -126,12 +131,12 @@ void reactive() {
     ledNewOn = 163;
   }
 
-  for (int i = 0; i < ledNewOn; ++i) {
-    leds_1[Front_Left_Bottom + i] = CHSV(i + gHue, 255, 192);
-    leds_2[Front_Right_Bottom - i] = CHSV(i + gHue, 255, 192);
-    leds_3[min(Rear_Right_Bottom, Rear_Right_Bottom - i + 14)] = CHSV(i + gHue, 255, 192);
-    leds_1[Rear_Left_Bottom - i + 67] = CHSV(i + gHue, 255, 192);
-  }
+   for (int i = 0; i < ledNewOn; ++i) {
+     leds_1[Front_Left_Bottom + i] = CHSV(i + gHue, 255, 192);
+     leds_2[Front_Right_Bottom - i] = CHSV(i + gHue, 255, 192);
+     leds_3[min(Rear_Right_Bottom, Rear_Right_Bottom - i + 14)] = CHSV(i + gHue, 255, 192);
+     leds_1[Rear_Left_Bottom - i + 67] = CHSV(i + gHue, 255, 192);
+   }
 
   // Front Rainbow Bar
   for (int i = 0; i < (Front_Right_Bottom - 163); ++i) {
@@ -148,12 +153,21 @@ void reactive() {
     leds_3[i] = CHSV(gHue, 255, 192);
   }
 
-  // Back Rainbow Bar
+    // Back Rainbow Bar
   for (int i = Rear_Right_TopL; i < 750; ++i) {
     leds_3[i] = CHSV(gHue, 255, 192);
   }
 
   ledOldOn = ledNewOn;
   gHue = gHue + 1;
+
+  Serial.println(millis() - lastColorChange);
+
+  // // Color shift on bass drop
+  // if (millis() - lastColorChange > 100 && ledNewOn > 120) {
+  //   lastColorChange = millis();
+  //   gHue += 100;
+  // }
+
   FastLED.show();
 }
