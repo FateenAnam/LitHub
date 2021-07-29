@@ -129,13 +129,12 @@ class VirtualStrip {
 VirtualStrip frontLeftStrip(leds_1, Front_Left_Bottom, Front_Left_TopL - Front_Left_Bottom);
 VirtualStrip frontRightStrip(leds_2, Front_Right_TopL, Front_Right_Bottom - Front_Right_TopL, true);
 VirtualStrip rearLeftStrip(leds_1, Rear_Left_TopL, Rear_Left_Bottom - Rear_Left_TopL, true);
-VirtualStrip rearRightStrip(leds_3, Rear_Right_Bottom, Rear_Right_Num - Rear_Right_Bottom, true);
+VirtualStrip rearRightStrip(leds_3, Rear_Right_TopR, Rear_Right_Num, true);
 
 // Define ceiling bars
 VirtualStrip rightCeilingStrip(leds_3, Front_Right_TopR, Rear_Right_TopR - Front_Right_TopR);
 VirtualStrip rearCeilingStrip(leds_3, Rear_Right_TopL, Rear_Left_TopR - Rear_Right_TopL);
 VirtualStrip leftCeilingStrip(leds_1, Front_Left_TopL, Rear_Left_TopL - Front_Left_TopL, true);
-// VirtualStrip leftCeilingStrip(leds_1, 163, 300, false);
 VirtualStrip frontCeilingStrip(leds_2, Front_Left_TopR, Front_Right_TopL - Front_Left_TopR);
 
 // Master ceiling
@@ -161,48 +160,12 @@ void setup() {
 CRGB* test[800];
 
 void loop() {
-  // for (int i = 0; i < 600; ++i) {
-  //   test[i] = &(leds_1[i]);
-  // }
-  // for (int i = 0; i < rearRightStrip.getLength(); ++i) {
-  //   *(test[i]) = CRGB::White;
-  // }
-  // reactive();
+  reactive();
   // movingRainbow();  
-
-  // fill_rainbow(leds_1, 600, 100);
-  // for (int i = 0; i < NUM_LEDS_1; ++i) {
-  //   leds_1[i] = CRGB::Black;
-  //   leds_2[i] = CRGB::Black;
-  //   leds_3[i] = CRGB::Black;
+  // for (int i = 0; i < rearRightStrip.getLength(); ++i) {
+  //   rearRightStrip[i] = CRGB::White;
   // }
-
-  for (int i = 0; i < ceilingStrip.getLength(); ++i) {
-    ceilingStrip[i] = CRGB::White;
-    FastLED.show();
-    delay(1);
-  }
-
-  // for (int i = 0; i < rightCeilingStrip.getLength(); ++i) {
-  //   rightCeilingStrip[i] = CRGB::White;
-  //   FastLED.show();
-  //   delay(1);
-  // }
-
-  // for (int i = 0; i < rearCeilingStrip.getLength(); ++i) {
-  //   rearCeilingStrip[i] = CRGB::White;
-  //   FastLED.show();
-  //   delay(1);
-  // }
-
-  // for (int i = 0; i < leftCeilingStrip.getLength(); ++i) {
-  //   leftCeilingStrip[i] = CRGB::White;
-  //   FastLED.show();
-  //   delay(1);
-  // }
-  
-  
-  // calibrateStripPosition(leds_3 + Front_Right_TopL);
+  // FastLED.show();
 }
 
 //**********************************************************************
@@ -284,37 +247,27 @@ void reactive() {
     ledNewOn = 163;
   }
 
-   for (int i = 0; i < ledNewOn; ++i) {
-     leds_1[Front_Left_Bottom + i] = CHSV(i + gHue, 255, 192);
-     leds_2[Front_Right_Bottom - i] = CHSV(i + gHue, 255, 192);
-     leds_3[min(Rear_Right_Bottom, Rear_Right_Bottom - i + 14)] = CHSV(i + gHue, 255, 192);
-     leds_1[Rear_Left_Bottom - i + 67] = CHSV(i + gHue, 255, 192);
+  //  for (int i = 0; i < ledNewOn; ++i) {
+  //    leds_1[Front_Left_Bottom + i] = CHSV(i + gHue, 255, 192);
+  //    leds_2[Front_Right_Bottom - i] = CHSV(i + gHue, 255, 192);
+  //    leds_3[min(Rear_Right_Bottom, Rear_Right_Bottom - i + 14)] = CHSV(i + gHue, 255, 192);
+  //    leds_1[Rear_Left_Bottom - i + 67] = CHSV(i + gHue, 255, 192);
+  //  }
+
+  for (int i = 0; i < ledNewOn; ++i) {
+     frontLeftStrip[i] = CHSV(i + gHue, 255, 192);
+     frontRightStrip[i] = CHSV(i + gHue, 255, 192);
+     rearLeftStrip[max(i - 67, 0)] = CHSV(i + gHue, 255, 192);
+     rearRightStrip[max(0, i - 14)] = CHSV(i + gHue, 255, 192);
    }
 
-  // Front Rainbow Bar
-  for (int i = 0; i < (Front_Right_Bottom - 163); ++i) {
-    leds_2[i] = CHSV(gHue, 255, 192);
-  }
-
-  // Left Rainbow Bar
-  for (int i = Front_Left_TopR; i < Rear_Left_TopL; ++i) {
-    leds_1[i] = CHSV(gHue, 255, 192);
-  }
-
-  // Right Rainbow Bar
-  for (int i = 0; i < Rear_Right_TopR; ++i) {
-    leds_3[i] = CHSV(gHue, 255, 192);
-  }
-
-    // Back Rainbow Bar
-  for (int i = Rear_Right_TopL; i < 750; ++i) {
-    leds_3[i] = CHSV(gHue, 255, 192);
+  // Ceiling Rainbow Bar
+  for (int i = 0; i < ceilingStrip.getLength(); ++i) {
+    ceilingStrip[i] = CHSV(gHue, 255, 192);
   }
 
   // ledOldOn = ledNewOn;
   gHue = gHue + 1;
-
-  Serial.println(millis() - lastColorChange);
 
   // Color shift on bass drop
   if (millis() - lastColorChange > 100 && ledNewOn > 120) {
