@@ -4,6 +4,7 @@
 #define USE_WS2812SERIAL
 #include <FastLED.h>
 #include <ArduinoQueue.h>
+#include "VirtualStrip.h"
 
 // How many leds in your strip?
 #define NUM_LEDS_1 800
@@ -75,73 +76,6 @@ void movingRainbow();
 void calibrateStripPosition(CRGB* start);
 void sexy();
 
-/**
- * @class VirtualStrip
- * @brief Allows the user to group the strips into their logical locations. For example,
- * the front-left bar can have its own strip
- */
-class VirtualStrip {
-  public:
-  VirtualStrip(CRGB* strip, uint16_t begin, uint16_t numLeds, bool reversed = false) 
-      : stripPtr(new CRGB*[numLeds]), // Dynamically allocate array
-        numLeds(numLeds),
-        reversed(reversed)
-      {
-        if (!reversed) {
-          for (int i = 0; i < numLeds; ++i) {
-            stripPtr[i] = &(strip[begin + i]);
-          }
-        }
-        else {
-          for (int i = 0; i < numLeds; ++i) {
-            stripPtr[i] = &(strip[begin + numLeds - i]);
-          }
-        }
-  }
-
-  ~VirtualStrip() {
-    delete stripPtr;
-  }
-
-  void appendStrip(VirtualStrip& newStrip) {
-    uint16_t newLength = numLeds + newStrip.getLength();
-    CRGB** newStripPtr = new CRGB*[newLength];
-
-    // Transfer original array
-    for (int i = 0; i < numLeds; ++i) {
-      newStripPtr[i] = stripPtr[i];
-    }
-    // Add new strip
-    for (int i = numLeds; i < newLength; ++i) {
-      newStripPtr[i] = &(newStrip[i - numLeds]);
-    }
-
-    numLeds = newLength;
-
-    CRGB** tmp = stripPtr;
-    stripPtr = newStripPtr;
-    delete tmp;
-  }
-
-  CRGB& operator[](int index) {
-    // if (index >= numLeds) {
-    //   return *(stripPtr[numLeds]);
-    // }
-
-    // Index into array based on if it is reversed or not
-    return *(stripPtr[index]);
-  }
-
-  uint16_t getLength() {
-    return numLeds;
-  }
-
-  private:
-    CRGB** stripPtr;
-    uint16_t numLeds;
-    bool reversed;
-};
-
 // Define volume bars
 VirtualStrip frontLeftStrip(leds_1, Front_Left_Bottom, Front_Left_TopL - Front_Left_Bottom);
 VirtualStrip frontRightStrip(leds_2, Front_Right_TopL, Front_Right_Bottom - Front_Right_TopL, true);
@@ -155,22 +89,37 @@ VirtualStrip leftCeilingStrip(leds_1, Front_Left_TopL, Rear_Left_TopL - Front_Le
 VirtualStrip frontCeilingStrip(leds_2, Front_Left_TopR, Front_Right_TopL - Front_Left_TopR);
 
 // Master ceiling
-VirtualStrip ceilingStrip(leds_2, Front_Left_TopR, Front_Right_TopL - Front_Left_TopR);
+VirtualStrip ceilingStrip;
+
+// Master Strip
+VirtualStrip masterStrip;
 
 void setup() {
-  Serial.begin(9600); // open the serial port at 9600 bps:
-  // Native strips
+  // Safety precauation
+  delay(2000);
+
+  // Open the serial port
+  Serial.begin(9600);
+  
+  // Add native strips and set brightness
   LEDS.addLeds<WS2812SERIAL, DATA_PIN_1, BGR>(leds_1, NUM_LEDS_1);
   LEDS.addLeds<WS2812SERIAL, DATA_PIN_2, BGR>(leds_2, NUM_LEDS_2);
   LEDS.addLeds<WS2812SERIAL, DATA_PIN_3, BGR>(leds_3, NUM_LEDS_3);
-
-  // LEDS.addLeds<WS2812SERIAL, DATA_PIN_3, BGR>(rearRightStrip, 149);
   LEDS.setBrightness(BRIGHTNESS);
 
+  // Set-up the ceiling strip
+  ceilingStrip.appendStrip(frontCeilingStrip);
   ceilingStrip.appendStrip(rightCeilingStrip);
   ceilingStrip.appendStrip(rearCeilingStrip);
   ceilingStrip.appendStrip(leftCeilingStrip);
 
+  // Set-up the master strip
+  masterStrip.appendStrip(frontLeftStrip);
+  masterStrip.appendStrip(frontRightStrip);
+  masterStrip.appendStrip(rearLeftStrip);
+  masterStrip.appendStrip(rearRightStrip);
+
+  // Call on animation
   on();
 }
 
