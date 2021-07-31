@@ -68,10 +68,12 @@ typedef void (*SimplePatternList[])();
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
 uint8_t gHue = 100; // rotating "base color" used by many of the patterns
 
+void solid(CRGB color);
 void on();
 void reactive();
 void movingRainbow();
 void calibrateStripPosition(CRGB* start);
+void sexy();
 
 /**
  * @class VirtualStrip
@@ -290,7 +292,7 @@ void reactive() {
   gHue = gHue + 1;
 
   // Color shift on bass drop
-  if (millis() - lastColorChange > 150 && ledNewOn > 120) {
+  if (millis() - lastColorChange > 500 && ledNewOn > 140) {
     lastColorChange = millis();
     gHue += 100;
   }
@@ -409,41 +411,10 @@ void reactive() {
 
 void on(){
 
-  //turn everything off
-  for(int i=0;i<ceilingStrip.getLength();++i){
-    ceilingStrip[i]=CRGB::Black;
-  }
-
-  for(int i=0;i<frontRightStrip.getLength();++i){
-    frontRightStrip[i]=CRGB::Black;
-  }
-
-  for(int i=0;i<frontLeftStrip.getLength();++i){
-    frontLeftStrip[i]=CRGB::Black;
-  }
-
-  for(int i=0;i<rearLeftStrip.getLength();++i){
-    rearLeftStrip[i]=CRGB::Black;
-  }
-
-   for(int i=0;i<rearRightStrip.getLength();++i){
-    rearRightStrip[i]=CRGB::Black;
-  }
-
-  for(int i=0;i<rearLeftStrip.getLength();++i){
-    rearLeftStrip[i]=CRGB::Black;
-  }
+  solid(CRGB::Black);
 
   //On animation
 
-  //turn on ceiling
-  // for(int i=1;i<ceilingStrip.getLength()-1;i+=3){
-  //     ceilingStrip[i-1]=CHSV(gHue, 255, 192);
-  //     ceilingStrip[i]=CHSV(gHue, 255, 192);
-  //     ceilingStrip[i+1]=CHSV(gHue, 255, 192);
-  //     gHue+=1;
-  //     FastLED.show();
-  // }
   
   //Up from floors
   int index=1;
@@ -580,3 +551,39 @@ void on(){
   }
 
 }
+
+void sexy(){
+
+  solid(CRGB::Red);
+
+}
+
+void solid(CRGB color){
+  //turn everything off
+  for(int i=0;i<ceilingStrip.getLength();++i){
+    ceilingStrip[i]=color;
+  }
+
+  for(int i=0;i<frontRightStrip.getLength();++i){
+    frontRightStrip[i]=color;
+  }
+
+  for(int i=0;i<frontLeftStrip.getLength();++i){
+    frontLeftStrip[i]=color;
+  }
+
+  for(int i=0;i<rearLeftStrip.getLength();++i){
+    rearLeftStrip[i]=color;
+  }
+
+   for(int i=0;i<rearRightStrip.getLength();++i){
+    rearRightStrip[i]=color;
+  }
+
+  for(int i=0;i<rearLeftStrip.getLength();++i){
+    rearLeftStrip[i]=color;
+  }
+}
+
+
+
