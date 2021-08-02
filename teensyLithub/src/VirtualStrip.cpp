@@ -53,7 +53,7 @@ delete tmp;
 
 CRGB& VirtualStrip::operator[](int index) {
     if (index >= numLeds) {
-      return *(stripPtr[numLeds]);
+      return *(stripPtr[numLeds - 1]);
     }
     else if (index < 0) {
         return *(stripPtr[0]);

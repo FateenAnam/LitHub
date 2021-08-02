@@ -53,14 +53,14 @@ unsigned int sample;
 //front side
 int ledFrontR = 0; //right side index
 int ledFrontL = 0; //left side index
-ArduinoQueue<int> chaseIndexFrontR(1800); //Q to go right
-ArduinoQueue<int> chaseIndexFrontL(1800); //Q to go left
+ArduinoQueue<int> chaseIndexFrontR(1000); //Q to go right
+ArduinoQueue<int> chaseIndexFrontL(1000); //Q to go left
 
 //backside
 int ledBackR = 0; //right side index
 int ledBackL = 0; //left side index
-ArduinoQueue<int> chaseIndexBackR(1800); //Q to go right
-ArduinoQueue<int> chaseIndexBackL(1800); //Q to go left
+ArduinoQueue<int> chaseIndexBackR(1000); //Q to go right
+ArduinoQueue<int> chaseIndexBackL(1000); //Q to go left
 
 uint32_t lastColorChange;
 
@@ -77,6 +77,9 @@ void calibrateStripPosition(CRGB* start);
 void sexy();
 void study();
 void sky();
+void flicker();
+void physical();
+void virtualShow();
 
 // Define volume bars
 VirtualStrip frontLeftStrip(leds_1, Front_Left_Bottom, Front_Left_TopL - Front_Left_Bottom);
@@ -104,13 +107,13 @@ void setup() {
   Serial.begin(9600);
   
   // Add native strips and set brightness
-  // LEDS.addLeds<WS2812SERIAL, DATA_PIN_1, BGR>(leds_1, NUM_LEDS_1).setCorrection(TypicalLEDStrip);
-  // LEDS.addLeds<WS2812SERIAL, DATA_PIN_2, BGR>(leds_2, NUM_LEDS_2).setCorrection(TypicalLEDStrip);
-  // LEDS.addLeds<WS2812SERIAL, DATA_PIN_3, BGR>(leds_3, NUM_LEDS_3).setCorrection(TypicalLEDStrip);
+  LEDS.addLeds<WS2812SERIAL, DATA_PIN_1, BGR>(leds_1, NUM_LEDS_1).setCorrection(TypicalLEDStrip);
+  LEDS.addLeds<WS2812SERIAL, DATA_PIN_2, BGR>(leds_2, NUM_LEDS_2).setCorrection(TypicalLEDStrip);
+  LEDS.addLeds<WS2812SERIAL, DATA_PIN_3, BGR>(leds_3, NUM_LEDS_3).setCorrection(TypicalLEDStrip);
 
-  LEDS.addLeds<WS2812SERIAL, DATA_PIN_1, BGR>(leds_1, NUM_LEDS_1);
-  LEDS.addLeds<WS2812SERIAL, DATA_PIN_2, BGR>(leds_2, NUM_LEDS_2);
-  LEDS.addLeds<WS2812SERIAL, DATA_PIN_3, BGR>(leds_3, NUM_LEDS_3);
+  // LEDS.addLeds<WS2812SERIAL, DATA_PIN_1, BGR>(leds_1, NUM_LEDS_1);
+  // LEDS.addLeds<WS2812SERIAL, DATA_PIN_2, BGR>(leds_2, NUM_LEDS_2);
+  // LEDS.addLeds<WS2812SERIAL, DATA_PIN_3, BGR>(leds_3, NUM_LEDS_3);
 
   LEDS.setBrightness(BRIGHTNESS);
 
@@ -128,14 +131,56 @@ void setup() {
   masterStrip.appendStrip(rearRightStrip);
 
   // Call on animation
-  // on();
+  on();
 }
 
 void loop() {
   // reactive();
   // sexy();
-  // study();
-  sky();
+  study();
+  // sky();
+  // physical();
+  // virtualShow();
+}
+
+void virtualShow() {
+    for (int i = 0; i < 800; ++i) {
+        frontLeftStrip[i] = CHSV(0 * 45, 255, 255); 
+        rearRightStrip[i] = CHSV(0 * 45, 255, 255); 
+        rearLeftStrip[i] = CHSV(2 * 45, 255, 255); 
+        frontRightStrip[i] = CHSV(2 * 45, 255, 255); 
+        frontCeilingStrip[i] = CHSV(4 * 45, 255, 255); 
+        rearCeilingStrip[i] = CHSV(5 * 45, 255, 255); 
+        leftCeilingStrip[i] = CHSV(7 * 45, 255, 255); 
+        rightCeilingStrip[i] = CHSV(7 * 45, 255, 255); 
+  }
+  LEDS.show();
+}
+
+void physical() {
+  for (int i = 0; i < 800; ++i) {
+    leds_1[i] = CHSV(0, 255, 255); 
+    leds_2[i] = CHSV(120, 255, 255); 
+    leds_3[i] = CHSV(240, 255, 255); 
+  }
+  LEDS.show();
+}
+
+void flicker() {
+  // On
+  for (int i = 0; i < masterStrip.getLength(); ++i) {
+    masterStrip[i] = CRGB(255, 255, 255);
+  }
+  LEDS.show();
+
+  delay(100);
+
+  // Off
+  for (int i = 0; i < masterStrip.getLength(); ++i) {
+    masterStrip[i] = CRGB::Black;
+  }
+  LEDS.show();
+  delay(100);
 }
 
 void sky(){
@@ -224,8 +269,10 @@ void reactive() {
     ledNewOn = NUM_LEDS_1;
   }
 
-  for (int i = 0; i < masterStrip.getLength(); ++i) {
-    masterStrip[i] = CRGB::Black;
+  for (int i = 0; i < 800; ++i) {
+    leds_1[i] = CRGB::Black;
+    leds_2[i] = CRGB::Black;
+    leds_3[i] = CRGB::Black;
   }
 
   if (ledNewOn > 163) {
@@ -271,11 +318,9 @@ void reactive() {
   //right side
     for (int i = 0; i < chaseIndexFrontR.itemCount(); ++i) {
       ledFrontR = chaseIndexFrontR.dequeue();
-    
 
-      for(int i = (-size); i<=size ;++i){
+      for (int i = (-size); i<=size ;++i) {
         ceilingStrip[ledFrontR+i] = CRGB::White;
-        
       }
 
       //if wont go off end of strip, increment
@@ -283,9 +328,8 @@ void reactive() {
         chaseIndexFrontR.enqueue(ledFrontR + speed);
       
       }
-
-  
   }
+
   //left side
   for (int i = 0; i < chaseIndexFrontL.itemCount(); ++i) {
       
@@ -299,7 +343,7 @@ void reactive() {
 
       if(( ledFrontL>= middleleft) or (middlefront >= ledFrontL and ledFrontL>= 0+offset)){ 
           chaseIndexFrontL.enqueue(ledFrontL - speed);
-      }else if(ledFrontL < 0+offset) {
+      } else if(ledFrontL < 0+offset) {
           chaseIndexFrontL.enqueue(ceilingStrip.getLength()-size-1);
       }
   }
@@ -344,7 +388,6 @@ void reactive() {
 
       for(int i = (-size); i<=size ;++i){
         ceilingStrip[ledBackR+i] = CRGB::White;
-        
       }
 
       //if wont go off end of strip, increment
@@ -471,7 +514,6 @@ void on(){
       rearCeilingStrip[index]=CHSV(gHue, 255, 192);
       rearCeilingStrip[index+1]=CHSV(gHue, 255, 192);
     }
-    
 
     //push down to reactive offset
     index=decrementIndex;
@@ -502,51 +544,64 @@ void on(){
     
     incrementIndex+=3;
     decrementIndex-=1;
-    FastLED.show();
+    LEDS.show();
   }
 }
 
 
-  static float pulseSpeed = 1;  // Larger value gives faster pulse.
+  static float pulseSpeed = 0.25;  // Larger value gives faster pulse.
 
   // uint8_t hueA = 15;  // Start hue at valueMin.
-  // uint8_t satA = 230;  // Start saturation at valueMin.
-  float valueMin = 175.0;  // Pulse minimum value (Should be less then valueMax).
+  uint8_t satA = 0;  // Start saturation at valueMin.
+  float valueMin = 230.0;  // Pulse minimum value (Should be less then valueMax).
 
   // uint8_t hueB = 95;  // End hue at valueMax.
-  // uint8_t satB = 255;  // End saturation at valueMax.
+  uint8_t satB = 15;  // End saturation at valueMax.
   float valueMax = 255.0;  // Pulse maximum value (Should be larger then valueMin).
 
   // uint8_t hue = hueA;  // Do Not Edit
-  // uint8_t sat = satA;  // Do Not Edit
+  uint8_t sat = satA;  // Do Not Edit
   float val = valueMin;  // Do Not Edit
   // uint8_t hueDelta = hueA - hueB;  // Do Not Edit
   static float delta = (valueMax - valueMin) / 2.35040238;  // Do Not Edit
 void sexy(){
-
-
-  float dV = ((exp(sin(pulseSpeed * millis()/2000.0*PI)) - 0.36787944) * delta);
-  val = valueMin + dV;
-  // hue = map(val, valueMin, valueMax, hueA, hueB);  // Map hue based on current val
+  // float dV = ((exp(sin(pulseSpeed * millis()/2000.0*PI)) - 0.36787944) * delta);
+  // val = valueMin + dV;
+  // // hue = map(val, valueMin, valueMax, hueA, hueB);  // Map hue based on current val
   // sat = map(val, valueMin, valueMax, satA, satB);  // Map sat based on current val
 
-  for (int i = 0; i < masterStrip.getLength(); i++) {
-    masterStrip[i] = CRGB(255, 200, 60);
+  // for (int i = 0; i < masterStrip.getLength(); i++) {
+  //   masterStrip[i] = CRGB(255, sat, sat);
+  //   LEDS.setBrightness(255);
+  //   // masterStrip[i] = CHSV(0, sat, val);
 
-    // You can experiment with commenting out these dim8_video lines
-    // to get a different sort of look.
-    // masterStrip[i].r = dim8_video(masterStrip[i].r);
-    // masterStrip[i].g = dim8_video(masterStrip[i].g);
-    // masterStrip[i].b = dim8_video(masterStrip[i].b);
-  }
-
-  FastLED.show();
-
-  // solid(CRGB::Red);
-  // for (int i = 200; i > 100; ++i) {
-  //   LEDS.setBrightness(i);
-  //   LEDS.show();
+  //   // You can experiment with commenting out these dim8_video lines
+  //   // to get a different sort of look.
+  //   // masterStrip[i].r = dim8_video(masterStrip[i].r);
+  //   // masterStrip[i].g = dim8_video(masterStrip[i].g);
+  //   // masterStrip[i].b = dim8_video(masterStrip[i].b);
   // }
+
+  // FastLED.show();
+
+  // // Serial.println(millis() - start);
+
+  // // solid(CRGB::Red);
+  // // for (int i = 200; i > 100; ++i) {
+  // //   LEDS.setBrightness(i);
+  // //   LEDS.show();
+  // // }
+  for (int i = 30; i >= 0; --i) {
+    solid(CRGB(255, i, i));
+    LEDS.show();
+    delay(100);
+  }
+  
+  for (int i = 0; i < 30; ++i) {
+    solid(CRGB(255, i, i));
+    LEDS.show();
+    delay(100);
+  }
   
 
 }
